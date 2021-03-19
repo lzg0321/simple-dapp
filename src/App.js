@@ -9,10 +9,10 @@ class App extends React.Component {
     this.state = {
       connected: false, // 是否连接meta mask
       account: '', // meta mask的以太坊账户
-      ethBalance: 0,
-      balance: 0,
-      txHash: '',
-      status: ''
+      ethBalance: 0, // 以太坊余额
+      balance: 0, // 币余额
+      txHash: '', // 广播的交易id
+      status: '' // 交易状态
     }
   }
   componentDidMount() {
@@ -61,21 +61,31 @@ class App extends React.Component {
     });
     this.fetchBalance(account);
   }
+  /**
+   * 记录收款地址
+   * @param e
+   */
   onReceiverChange = (e) =>{
     const address = e.target.value;
     this.setState({
       receiverAddress: address
     })
   }
+  /**
+   * 记录转出数量
+   * @param e
+   */
   onTransferAmountChange = (e) => {
     const amount = e.target.value;
     this.setState({
       transferAmount: amount
     })
   }
+  /**
+   * 转账
+   */
   onTransfer = () => {
-    console.log('receiverAddress', this.state.receiverAddress);
-    console.log('transferAmount', this.state.transferAmount);
+    // 在此调用合约方法send
     this.contract.methods.send(this.state.receiverAddress, this.state.transferAmount)
       .send({
         from: this.state.account
@@ -87,7 +97,7 @@ class App extends React.Component {
           status: 'pending',
         });
       })
-      .on('confirmation', (confirmationNumber, receipt) => {
+      .on('receipt', (receipt) => {
         // 交易已被确认
         this.setState({
           status: 'confirmed',
