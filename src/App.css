@@ -30,3 +30,7 @@
 .transferCon button{
   margin-top: 10px;
 }
+.warn {
+  background-color: #282c34;
+  color: yellow;
+}

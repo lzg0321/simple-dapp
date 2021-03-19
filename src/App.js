@@ -16,6 +16,7 @@ class App extends React.Component {
       balance: 0, // 币余额
       txHash: '', // 广播的交易id
       status: '', // 交易状态
+      netVersion: '' // network id
     }
   }
   /**
@@ -25,6 +26,18 @@ class App extends React.Component {
     console.log('window.ethereum', window.ethereum)
     await window.ethereum.enable();
     this.web3 = new Web3(window.ethereum);
+    window.ethereum.on('networkChanged',  () => {
+      console.log('changed net')
+      this.fetchNetworkId();
+    });
+    this.fetchNetworkId();
+  }
+  async fetchNetworkId () {
+    const netVersion = await this.web3.eth.net.getId();
+    console.log('netVersion', netVersion)
+    this.setState({
+      netVersion
+    });
   }
 
   /**
@@ -45,7 +58,7 @@ class App extends React.Component {
       filter: {to: [this.state.account]},
       fromBlock: 0
     })
-      .on('data', (event) => {
+      .on('change', (event) => {
         this.fetchBalance(this.state.account)
       });
   }
@@ -161,6 +174,7 @@ class App extends React.Component {
    */
   onTransfer = () => {
     // 在此调用合约方法send
+    console.log('transfer', this.state.receiverAddress, this.state.transferAmount, this.state.account)
     this.contract.methods.send(this.state.receiverAddress, this.state.transferAmount)
       .send({
         from: this.state.account
@@ -183,6 +197,13 @@ class App extends React.Component {
   render() {
     return (
       <div className="App">
+        {
+          this.state.netVersion && this.state.netVersion !== 42 &&
+          <div className={'warn'}>
+            链接的网络不正确<br/>
+            请打开MetaMask切换至Kovan测试网络
+          </div>
+        }
         <header className="App-header">
           DApp Coin
         </header>
