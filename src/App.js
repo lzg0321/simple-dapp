@@ -18,15 +18,12 @@ class App extends React.Component {
       status: '', // 交易状态
     }
   }
-  componentDidMount() {
-    this.initWeb3();
-    this.initContract();
-  }
-
   /**
    * 初始化web3
    */
-  initWeb3 () {
+  async initWeb3 () {
+    console.log('window.ethereum', window.ethereum)
+    await window.ethereum.enable();
     this.web3 = new Web3(window.ethereum);
   }
 
@@ -37,6 +34,20 @@ class App extends React.Component {
     const contractAddress = '0xfa95506583310999dc823f45CaeD5faE3c2ED1b9';
     const contract = new this.web3.eth.Contract(abi, contractAddress);
     this.contract = contract;
+    this.initContractEvent();
+  }
+
+  /**
+   * 监听转账事件，当监听到当前账户收到币后，刷新余额
+   */
+  initContractEvent () {
+    this.contract.events.Sent({
+      filter: {to: [this.state.account]},
+      fromBlock: 0
+    })
+      .on('data', (event) => {
+        this.fetchBalance(this.state.account)
+      });
   }
 
   /**
@@ -66,7 +77,11 @@ class App extends React.Component {
    * @returns {Promise<void>}
    */
   connect  = async () => {
+    await this.initWeb3();
+    this.initContract();
+
     const accounts = await this.web3.eth.getAccounts();
+    console.log('accounts', accounts)
     const account = accounts[0];
     this.setState({
       connected: true,
@@ -87,16 +102,6 @@ class App extends React.Component {
   }
   /**
    * 记录转出数量
-   * @param e
-   */
-  onTransferAmountChange = (e) => {
-    const amount = e.target.value;
-    this.setState({
-      transferAmount: amount
-    })
-  }
-  /**
-   * 记录铸币数量
    * @param e
    */
   onTransferAmountChange = (e) => {
