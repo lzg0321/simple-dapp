@@ -1,5 +1,5 @@
 // 描述了编译器版本
-pragma solidity ^0.4.21;
+pragma solidity ^0.7.6;
 
 contract Coin {
     // 关键字“public”让这些变量可以从外部读取

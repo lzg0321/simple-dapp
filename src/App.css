@@ -19,4 +19,14 @@
   width: 750px;
   margin: 0 auto;
   text-align: left;
+  padding-top: 60px;
+}
+.transferCon input{
+  width: 300px;
+}
+.transferItem {
+  margin-top: 10px;
+}
+.transferCon button{
+  margin-top: 10px;
 }

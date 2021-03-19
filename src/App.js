@@ -9,10 +9,13 @@ class App extends React.Component {
     this.state = {
       connected: false, // 是否连接meta mask
       account: '', // meta mask的以太坊账户
+      minterAccount: '', // 铸币者的以太坊账户
+      mintReceiverAddress: '', // 铸币的接收地址
+      mintAmount: '', // 铸币数量
       ethBalance: 0, // 以太坊余额
       balance: 0, // 币余额
       txHash: '', // 广播的交易id
-      status: '' // 交易状态
+      status: '', // 交易状态
     }
   }
   componentDidMount() {
@@ -48,6 +51,16 @@ class App extends React.Component {
       ethBalance: Web3.utils.fromWei(ethBalance)
     })
   }
+
+  /**
+   * 请求铸币者地址
+   */
+  async fetchMinterAccount () {
+    const minterAccount = await this.contract.methods.minter().call();
+    this.setState({
+      minterAccount,
+    })
+  }
   /**
    * 连接Meta Mask的以太坊账户
    * @returns {Promise<void>}
@@ -60,6 +73,7 @@ class App extends React.Component {
       account: account
     });
     this.fetchBalance(account);
+    this.fetchMinterAccount();
   }
   /**
    * 记录收款地址
@@ -82,6 +96,62 @@ class App extends React.Component {
     })
   }
   /**
+   * 记录铸币数量
+   * @param e
+   */
+  onTransferAmountChange = (e) => {
+    const amount = e.target.value;
+    this.setState({
+      transferAmount: amount
+    })
+  }
+  /**
+   * 记录铸币的接收地址
+   * @param e
+   */
+  onMintReceiverChange = (e) =>{
+    const address = e.target.value;
+    this.setState({
+      mintReceiverAddress: address
+    })
+  }
+  /**
+   * 记录铸币数量
+   * @param e
+   */
+  onMintAmountChange = (e) => {
+    const amount = e.target.value;
+    this.setState({
+      mintAmount: amount
+    })
+  }
+  /**
+   * 铸币
+   */
+  onMint = () => {
+    // 在此调用合约方法mint
+    this.contract.methods.mint(this.state.mintReceiverAddress, this.state.mintAmount)
+      .send({
+        from: this.state.account
+      })
+      .on('transactionHash', (hash) => {
+        // 交易广播到节点，等待打包
+        this.setState({
+          txHash: hash,
+          status: 'pending',
+          action: '铸币',
+        });
+      })
+      .on('receipt', (receipt) => {
+        // 交易已被确认
+        this.setState({
+          status: 'confirmed',
+        });
+        // 刷新余额信息
+        this.fetchBalance(this.state.account);
+      });
+  }
+  /**
    * 转账
    */
   onTransfer = () => {
@@ -95,6 +165,7 @@ class App extends React.Component {
         this.setState({
           txHash: hash,
           status: 'pending',
+          action: '转账',
         });
       })
       .on('receipt', (receipt) => {
@@ -118,11 +189,16 @@ class App extends React.Component {
             onTransfer={this.onTransfer}
             onReceiverChange={this.onReceiverChange}
             onTransferAmountChange={this.onTransferAmountChange}
+            onMint={this.onMint}
+            onMintReceiverChange={this.onMintReceiverChange}
+            onMintAmountChange={this.onMintAmountChange}
             ethBalance={this.state.ethBalance}
             balance={this.state.balance}
             account={this.state.account}
+            action={this.state.action}
             txHash={this.state.txHash}
             status={this.state.status}
+            isMinter={this.state.minterAccount === this.state.account}
           />
         }
       </div>
@@ -131,6 +207,7 @@ class App extends React.Component {
 }
 
 export default App;
+
 
 class DAppInfo extends React.Component {
   render() {
@@ -159,13 +236,27 @@ class DAppInfo extends React.Component {
           }
         </span>
       </div>
-      <div>
+      {
+        this.props.isMinter &&  <div className={'transferCon'}>
+          <h2>铸币</h2>
+          <div className={'transferItem'}>
+            <label>收币地址：</label>
+            <input type='text' onChange={this.props.onMintReceiverChange}/>
+          </div>
+          <div className={'transferItem'}>
+            <label>铸币数量：</label>
+            <input type='number' onChange={this.props.onMintAmountChange}/>
+          </div>
+          <button onClick={this.props.onMint}>确定铸币</button>
+        </div>
+      }
+      <div className={'transferCon'}>
         <h2>转账</h2>
-        <div>
+        <div className={'transferItem'}>
           <label>收款地址：</label>
           <input type='text' onChange={this.props.onReceiverChange}/>
         </div>
-        <div>
+        <div className={'transferItem'}>
           <label>转出数额：</label>
           <input type='number' onChange={this.props.onTransferAmountChange}/>
         </div>
@@ -174,6 +265,14 @@ class DAppInfo extends React.Component {
       {
         this.props.txHash && <div>
           <h2>记录</h2>
+          <div>
+            <label>交易动作：</label>
+            <span>
+            {
+              this.props.action
+            }
+          </span>
+          </div>
           <div>
             <label>交易哈希：</label>
             <span>
