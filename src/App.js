@@ -306,11 +306,11 @@ class DAppInfo extends React.Component {
           </div>
           <div>
             <label>交易哈希：</label>
-            <span>
+            <a href={`https://kovan.etherscan.io/tx/${this.props.txHash}`}>
             {
               this.props.txHash
             }
-          </span>
+          </a>
           </div>
           <div>
             <label>交易状态：</label>
