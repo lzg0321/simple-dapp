@@ -32,6 +32,11 @@ class App extends React.Component {
     });
     this.fetchNetworkId();
   }
+
+  /**
+   * 拿到网络id，不同的网络对应不同的id
+   * @returns {Promise<void>}
+   */
   async fetchNetworkId () {
     const netVersion = await this.web3.eth.net.getId();
     console.log('netVersion', netVersion)
